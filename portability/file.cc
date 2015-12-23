@@ -232,6 +232,8 @@ void
 toku_os_full_pwrite (int fd, const void *buf, size_t len, toku_off_t off) {
     assert(0==((long long)buf)%512);
     assert((len%512 == 0) && (off%512)==0); // to make pwrite work.
+    toku_off_t original_off = off;
+    size_t     original_len = len;
     const char *bp = (const char *) buf;
     while (len > 0) {
         ssize_t r;
@@ -250,6 +252,11 @@ toku_os_full_pwrite (int fd, const void *buf, size_t len, toku_off_t off) {
         }
     }
     assert(len == 0);
+    {
+        int r = sync_file_range(fd, original_off, original_len, SYNC_FILE_RANGE_WRITE);
+        assert(r == 0);
+    }
+
 }
 
 ssize_t
@@ -257,6 +264,8 @@ toku_os_pwrite (int fd, const void *buf, size_t len, toku_off_t off) {
     assert(0==((long long)buf)%512); // these asserts are to ensure that direct I/O will work.
     assert(0==len             %512);
     assert(0==off             %512);
+    toku_off_t original_off = off;
+    size_t     original_len = len;
     const char *bp = (const char *) buf;
     ssize_t result = 0;
     while (len > 0) {
@@ -273,6 +282,10 @@ toku_os_pwrite (int fd, const void *buf, size_t len, toku_off_t off) {
         len           -= r;
         bp            += r;
         off           += r;
+    }
+    {
+        int r = sync_file_range(fd, original_off, original_len, SYNC_FILE_RANGE_WRITE);
+        assert(r == 0);
     }
     return result;
 }
