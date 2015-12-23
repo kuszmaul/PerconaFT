@@ -404,6 +404,7 @@ void dmt<dmtdata_t, dmtdataout_t, dmtwriter_t>::verify(void) const {
             // We can only do a lower bound on memory usage.
             invariant(pool_used >= num_values * __builtin_offsetof(dmt_node, value));
         }
+        return;
         std::vector<bool> touched(pool_size, false);
         verify_internal(this->d.t.root, &touched);
         size_t bytes_used = 0;
