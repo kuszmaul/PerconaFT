@@ -1814,6 +1814,7 @@ static void flush_node_fun(void *fe_v)
             toku_ft_flush_some_child(fe->ft, fe->node, &fa);
         }
         else {
+            // Right here is where I want to schedule the node to be written.
             toku_unpin_ftnode(fe->ft,fe->node);
         }
     }
