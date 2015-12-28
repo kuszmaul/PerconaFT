@@ -877,6 +877,7 @@ clone_pair(evictor* ev, PAIR p) {
     // not sure if we have to release
     // and regrab the cachetable lock,
     // but doing it for now
+    assert(p->dirty);
     p->clone_callback(
         p->value_data,
         &p->cloned_value_data,
@@ -986,7 +987,9 @@ write_pair_for_checkpoint_thread (evictor* ev, PAIR p)
     }
     if (p->dirty && p->checkpoint_pending) {
         if (p->clone_callback) {
+            assert(p->dirty);
             nb_mutex_lock(&p->disk_nb_mutex, p->mutex);
+            assert(p->dirty);
             assert(!p->cloned_value_data);
             clone_pair(ev, p);
             assert(p->cloned_value_data);
@@ -1839,7 +1842,8 @@ cachetable_unpin_internal(
     PAIR p,
     enum cachetable_dirty dirty, 
     PAIR_ATTR attr,
-    bool flush
+    bool flush,
+    bool write_it_now
     )
 {
     invariant_notnull(p);
@@ -1869,7 +1873,9 @@ cachetable_unpin_internal(
     }
 
     // see comments above this function to understand this code
-    if (flush && added_data_to_cachetable) {
+    if (write_it_now) {
+        cachetable_write_locked_pair(&ct->ev, p, false);
+    } else if (flush && added_data_to_cachetable) {
         if (ct->ev.should_client_thread_sleep()) {
             ct->ev.wait_for_cache_pressure_to_subside();
         }
@@ -1881,10 +1887,14 @@ cachetable_unpin_internal(
 }
 
 int toku_cachetable_unpin(CACHEFILE cachefile, PAIR p, enum cachetable_dirty dirty, PAIR_ATTR attr) {
-    return cachetable_unpin_internal(cachefile, p, dirty, attr, true);
+    return cachetable_unpin_internal(cachefile, p, dirty, attr, true, false);
+}
+int toku_cachetable_unpin_and_write(CACHEFILE cachefile, PAIR p, enum cachetable_dirty dirty, PAIR_ATTR attr) {
+    assert(dirty);
+    return cachetable_unpin_internal(cachefile, p, dirty, attr, true, true);
 }
 int toku_cachetable_unpin_ct_prelocked_no_flush(CACHEFILE cachefile, PAIR p, enum cachetable_dirty dirty, PAIR_ATTR attr) {
-    return cachetable_unpin_internal(cachefile, p, dirty, attr, false);
+    return cachetable_unpin_internal(cachefile, p, dirty, attr, false, false);
 }
 
 static void

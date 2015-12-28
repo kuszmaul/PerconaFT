@@ -1457,6 +1457,7 @@ void toku_ft_flush_some_child(FT ft, FTNODE parent, struct flusher_advice *fa)
     // reactive, we can unpin the parent
     //
     if (!may_child_be_reactive) {
+        printf("P%d " , __LINE__); // maybe write the parent
         toku_unpin_ftnode(ft, parent);
         parent = NULL;
     }
@@ -1475,6 +1476,7 @@ void toku_ft_flush_some_child(FT ft, FTNODE parent, struct flusher_advice *fa)
     // for the root with a fresh one
     enum reactivity child_re = toku_ftnode_get_reactivity(ft, child);
     if (parent && child_re == RE_STABLE) {
+        //printf("P%d " , __LINE__); // maybe write the parent
         toku_unpin_ftnode(ft, parent);
         parent = NULL;
     }
@@ -1524,7 +1526,8 @@ void toku_ft_flush_some_child(FT ft, FTNODE parent, struct flusher_advice *fa)
             toku_ft_flush_some_child(ft, child, fa);
         }
         else {
-            toku_unpin_ftnode(ft, child);
+            //printf("%s:%d writing " , __FILE__, __LINE__); // maybe flush the parent
+            toku_unpin_ftnode_and_write(ft, child);
         }
     }
     else if (child_re == RE_FISSIBLE) {
@@ -1811,10 +1814,12 @@ static void flush_node_fun(void *fe_v)
         // pass a meaningful oldest referenced xid for simple garbage collection), and it is the
         // responsibility of the flush to unlock the node. otherwise, we unlock it here.
         if (fe->node->height > 0 && toku_ftnode_nonleaf_is_gorged(fe->node, fe->ft->h->nodesize)) {
+            //printf("U%d ", __LINE__);
             toku_ft_flush_some_child(fe->ft, fe->node, &fa);
         }
         else {
-            // Right here is where I want to schedule the node to be written.
+            // Right here is where I might want to schedule the node to be written.
+            //printf("U%d ", __LINE__);
             toku_unpin_ftnode(fe->ft,fe->node);
         }
     }
@@ -1823,6 +1828,7 @@ static void flush_node_fun(void *fe_v)
         // bnc, which means we are tasked with flushing some
         // buffer in the node.
         // It is the responsibility of flush some child to unlock the node
+        //printf("U% d" , __LINE__); // this is the common case, where I want to schedule the node to be written.
         toku_ft_flush_some_child(fe->ft, fe->node, &fa);
     }
     remove_background_job_from_cf(fe->ft->cf);

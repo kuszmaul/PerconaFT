@@ -340,6 +340,15 @@ void toku_unpin_ftnode(FT ft, FTNODE node) {
     invariant_zero(r);
 }
 
+void toku_unpin_ftnode_and_write(FT ft, FTNODE node) {
+    assert(node->dirty);
+    int r = toku_cachetable_unpin_and_write(ft->cf,
+                                            node->ct_pair,
+                                            static_cast<enum cachetable_dirty>(node->dirty),
+                                            make_ftnode_pair_attr(node));
+    invariant_zero(r);
+}
+
 void
 toku_unpin_ftnode_read_only(FT ft, FTNODE node)
 {

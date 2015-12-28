@@ -432,6 +432,11 @@ int toku_cachetable_unpin(CACHEFILE, PAIR, enum cachetable_dirty dirty, PAIR_ATT
 // Returns: 0 if success, otherwise returns an error number.
 // Requires: The ct is locked.
 
+int toku_cachetable_unpin_and_write(CACHEFILE, PAIR, enum cachetable_dirty dirty, PAIR_ATTR size);
+// Effect: Unpin a memory object and OR the dirty flag.  Write it to disk.  
+// Returns: 0 on sucess, otherwsie an error number.
+// Requires: The ct is locked and the object is dirty after the dirty flag is set.
+
 int toku_cachetable_unpin_ct_prelocked_no_flush(CACHEFILE, PAIR, enum cachetable_dirty dirty, PAIR_ATTR size);
 // Effect: The same as tokud_cachetable_unpin, except that the ct must not be locked.
 // Requires: The ct is NOT locked.

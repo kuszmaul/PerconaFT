@@ -135,6 +135,7 @@ int toku_maybe_pin_ftnode_clean(FT ft, BLOCKNUM blocknum, uint32_t fullhash, pai
  * Effect: Unpin an ftnode.
  */
 void toku_unpin_ftnode(FT ft, FTNODE node);
+void toku_unpin_ftnode_and_write(FT ft, FTNODE node); // force it to be written.  Requires the node is dirty.
 void toku_unpin_ftnode_read_only(FT ft, FTNODE node);
 
 // Effect: Swaps pair values of two pinned nodes
